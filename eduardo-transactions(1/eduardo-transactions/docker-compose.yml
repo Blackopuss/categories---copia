@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+
+  mysql-transactions:
+    image: mysql:8
+    container_name: mysql-transactions
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: transactions_db
+      MYSQL_USER: eduardo
+      MYSQL_PASSWORD: 0206
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  transactions-service:
+    image: transactions-service:latest
+    container_name: transactions-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      mysql-transactions:
+        condition: service_healthy    # 👈 espera a que MySQL esté listo de verdad
+    networks:
+      - app-network
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-transactions:3306/transactions_db
+      SPRING_DATASOURCE_USERNAME: eduardo
+      SPRING_DATASOURCE_PASSWORD: 0206
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:

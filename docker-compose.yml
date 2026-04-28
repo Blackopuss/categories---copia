@@ -1,0 +1,170 @@
+services:
+  eureka-server:
+    build: ./eureka-server/
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health", "||", "exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    build: ./api-gateway/
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    environment:
+      SERVER_PORT: 8080
+      EUREKA_URL: http://eureka-server:8761/eureka
+    depends_on:
+      - eureka-server
+
+  mysql-categories:
+    image: mysql:8
+    container_name: mysql-categories
+    ports:
+      - "33061:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: Zombies200
+      MYSQL_DATABASE: categories_db
+    volumes:
+      - mysql_categories_data:/var/lib/mysql
+
+  categories-service:
+    build: ./
+    container_name: categories-service
+    ports:
+      - "8082:8082"
+    restart: on-failure
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-categories:3306/categories_db?useSSL=false&serverTimezone=America/Mexico_City&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Zombies200
+      EUREKA_URL: http://eureka-server:8761/eureka/
+    depends_on:
+      - mysql-categories
+      - eureka-server
+
+  mysql-cards:
+    image: mysql:8
+    container_name: mysql-cards
+    ports:
+      - "33062:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: test_cards_db
+    volumes:
+      - mysql_cards_data:/var/lib/mysql
+
+  card-service:
+    build: ./card-service/card-service/
+    container_name: card-service
+    ports:
+      - "8083:8083"
+    restart: on-failure
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-cards:3306/test_cards_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: mysql
+      EUREKA_URL: http://eureka-server:8761/eureka/
+    depends_on:
+      - mysql-cards
+      - eureka-server
+
+  mysql-transactions:
+    image: mysql:8
+    container_name: mysql-transactions
+    ports:
+      - "33063:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: transactions_db
+      MYSQL_USER: eduardo
+      MYSQL_PASSWORD: 0206
+    volumes:
+      - mysql_transactions_data:/var/lib/mysql
+
+  transactions-service:
+    build: "./eduardo-transactions(1/eduardo-transactions/"
+    container_name: transactions-service
+    ports:
+      - "8084:8084"
+    restart: on-failure
+    environment:
+      SERVER_PORT: 8084
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-transactions:3306/transactions_db
+      SPRING_DATASOURCE_USERNAME: eduardo
+      SPRING_DATASOURCE_PASSWORD: 0206
+      EUREKA_URL: http://eureka-server:8761/eureka/
+    depends_on:
+      - mysql-transactions
+      - eureka-server
+
+  mysql-goals:
+    image: mysql:8
+    container_name: mysql-goals
+    ports:
+      - "33064:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: goals_db
+      MYSQL_USER: eduardo
+      MYSQL_PASSWORD: 0206
+    volumes:
+      - mysql_goals_data:/var/lib/mysql
+
+  goals-service:
+    build: ./goals-service/
+    container_name: goals-service
+    ports:
+      - "8085:8085"
+    restart: on-failure
+    environment:
+      SERVER_PORT: 8085
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-goals:3306/goals_db
+      SPRING_DATASOURCE_USERNAME: eduardo
+      SPRING_DATASOURCE_PASSWORD: 0206
+      EUREKA_URL: http://eureka-server:8761/eureka/
+    depends_on:
+      - mysql-goals
+      - eureka-server
+
+  mysql-users:
+    image: mysql:8
+    container_name: mysql-users
+    ports:
+      - "33065:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: test_usuarios_db
+    volumes:
+      - mysql_users_data:/var/lib/mysql
+
+  userservice:
+    build: ./user-service/user-service/
+    container_name: userservice
+    ports:
+      - "8081:8081"
+    restart: on-failure
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-users:3306/test_usuarios_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: mysql
+      EUREKA_URL: http://eureka-server:8761/eureka/
+    depends_on:
+      - mysql-users
+      - eureka-server
+
+volumes:
+  mysql_categories_data:
+  mysql_cards_data:
+  mysql_transactions_data:
+  mysql_goals_data:
+  mysql_users_data:
